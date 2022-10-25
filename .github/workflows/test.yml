@@ -1,0 +1,19 @@
+name: Test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          resources: |
+            - name: observe_monitor
+              attributes:
+                - name
+                - description
+                - disabled
