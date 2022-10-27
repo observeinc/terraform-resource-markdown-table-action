@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/hashicorp/go-version"
+	install "github.com/hashicorp/hc-install"
+	"github.com/hashicorp/hc-install/product"
+	"github.com/hashicorp/hc-install/releases"
+	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
@@ -39,7 +44,24 @@ func main() {
 
 	tfPath, err := exec.LookPath("terraform")
 	if err != nil {
-		githubactions.Fatalf(err.Error())
+		if errors.Is(err, exec.ErrNotFound) {
+			i := install.NewInstaller()
+			c := version.MustConstraints(version.NewConstraint(">= 1"))
+
+			tfPath, err = i.Install(context.Background(), []src.Installable{
+				&releases.LatestVersion{
+					Product:     product.Terraform,
+					Constraints: c,
+				},
+			})
+
+			if err != nil {
+				githubactions.Fatalf(err.Error())
+			}
+		} else {
+			githubactions.Fatalf(err.Error())
+		}
+
 	}
 
 	tf, err := tfexec.NewTerraform(workingDirectory, tfPath)
