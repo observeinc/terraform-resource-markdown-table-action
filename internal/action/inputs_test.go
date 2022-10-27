@@ -11,18 +11,18 @@ func TestResourcesInput_Parse(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
-		want    Resources
+		want    TerraformResources
 		wantErr bool
 	}{
 		{
 			name:  "empty",
 			input: "",
-			want:  Resources{},
+			want:  TerraformResources{},
 		},
 		{
 			name:  "resource",
 			input: "[{name: foo, attributes: [bar]}]",
-			want: Resources{
+			want: TerraformResources{
 				{
 					Name:       "foo",
 					Attributes: []string{"bar"},
@@ -55,17 +55,17 @@ func TestResources_Validate(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		resources Resources
+		resources TerraformResources
 		valid     bool
 	}{
 		{
 			name:      "empty resources",
-			resources: Resources{},
+			resources: TerraformResources{},
 			valid:     false,
 		},
 		{
 			name: "empty attributes",
-			resources: Resources{
+			resources: TerraformResources{
 				{
 					Name:       "foo",
 					Attributes: []string{},
@@ -75,7 +75,7 @@ func TestResources_Validate(t *testing.T) {
 		},
 		{
 			name: "valid",
-			resources: Resources{
+			resources: TerraformResources{
 				{
 					Name:       "foo",
 					Attributes: []string{"bar"},

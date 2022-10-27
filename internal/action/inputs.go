@@ -11,14 +11,14 @@ var ErrNoResources = errors.New("no resources defined")
 
 type Inputs struct {
 	WorkingDirectory string
-	Resources        ResourcesInput
+	ResourceTypes    ResourcesInput
 	OutputFile       string
 }
 
 type ResourcesInput string
 
-func (r ResourcesInput) Parse() (Resources, error) {
-	rs := Resources{}
+func (r ResourcesInput) Parse() (TerraformResources, error) {
+	rs := TerraformResources{}
 
 	if err := yaml.Unmarshal([]byte(r), &rs); err != nil {
 		return nil, err
@@ -27,9 +27,9 @@ func (r ResourcesInput) Parse() (Resources, error) {
 	return rs, nil
 }
 
-type Resources []*Resource
+type TerraformResources []*TerraformResourceType
 
-func (r Resources) Validate() error {
+func (r TerraformResources) Validate() error {
 	if len(r) == 0 {
 		return ErrNoResources
 	}
@@ -43,12 +43,12 @@ func (r Resources) Validate() error {
 	return nil
 }
 
-type Resource struct {
+type TerraformResourceType struct {
 	Name       string   `yaml:"name"`
 	Attributes []string `yaml:"attributes"`
 }
 
-func (r *Resource) Validate() error {
+func (r *TerraformResourceType) Validate() error {
 	if len(r.Attributes) == 0 {
 		return &NoResourceAttributesError{Name: r.Name}
 	}

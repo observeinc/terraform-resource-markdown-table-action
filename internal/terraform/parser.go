@@ -85,6 +85,16 @@ func (p *Parser) RequiredProviderSource(name string) (tfaddr.Provider, error) {
 	return tfaddr.MustParseProviderSource(rp.Source), nil
 }
 
+func (p *Parser) ResourcesOfType(resourceType string) (resources []*tfconfig.Resource) {
+	for _, resource := range p.module.ManagedResources {
+		if resource.Type == resourceType {
+			resources = append(resources, resource)
+		}
+	}
+
+	return resources
+}
+
 func (p *Parser) ResourceAttributes(resourceType, resourceName string, attributes []string) (map[string]interface{}, error) {
 	resource, ok := p.module.ManagedResources[fmt.Sprintf("%s.%s", resourceType, resourceName)]
 	if !ok {
