@@ -23,7 +23,7 @@ func TestParserResourceAttributes(t *testing.T) {
 		want       map[string]interface{}
 	}{
 		{
-			name: "simple",
+			name: "string attribute",
 			providers: &tfjson.ProviderSchemas{
 				Schemas: map[string]*tfjson.ProviderSchema{
 					"registry.terraform.io/test/test": {
@@ -57,6 +57,80 @@ terraform {
 			resource: "test_resource.test",
 			want: map[string]interface{}{
 				"foo": "bar",
+			},
+		},
+		{
+			name: "number attribute",
+			providers: &tfjson.ProviderSchemas{
+				Schemas: map[string]*tfjson.ProviderSchema{
+					"registry.terraform.io/test/test": {
+						ResourceSchemas: map[string]*tfjson.Schema{
+							"test_resource": {
+								Block: &tfjson.SchemaBlock{
+									Attributes: map[string]*tfjson.SchemaAttribute{
+										"foo": {
+											AttributeType: cty.Number,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			config: `
+resource "test_resource" "test" {
+	foo = 2
+}
+
+terraform {
+	required_providers {
+		test = {
+			source = "test/test"
+		}
+	}
+}
+`,
+			resource: "test_resource.test",
+			want: map[string]interface{}{
+				"foo": float64(2),
+			},
+		},
+		{
+			name: "bool attribute",
+			providers: &tfjson.ProviderSchemas{
+				Schemas: map[string]*tfjson.ProviderSchema{
+					"registry.terraform.io/test/test": {
+						ResourceSchemas: map[string]*tfjson.Schema{
+							"test_resource": {
+								Block: &tfjson.SchemaBlock{
+									Attributes: map[string]*tfjson.SchemaAttribute{
+										"foo": {
+											AttributeType: cty.Bool,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			config: `
+resource "test_resource" "test" {
+	foo = true
+}
+
+terraform {
+	required_providers {
+		test = {
+			source = "test/test"
+		}
+	}
+}
+`,
+			resource: "test_resource.test",
+			want: map[string]interface{}{
+				"foo": true,
 			},
 		},
 	}
