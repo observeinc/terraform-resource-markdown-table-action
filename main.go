@@ -2,17 +2,11 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/hashicorp/go-version"
-	install "github.com/hashicorp/hc-install"
-	"github.com/hashicorp/hc-install/product"
-	"github.com/hashicorp/hc-install/releases"
-	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
@@ -21,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-schema/earlydecoder"
 	"github.com/hashicorp/terraform-schema/schema"
 	"github.com/observeinc/terraform-resource-markdown-table-action/internal/action"
+	"github.com/observeinc/terraform-resource-markdown-table-action/internal/terraform"
 	"github.com/olekukonko/tablewriter"
 	"github.com/sethvargo/go-githubactions"
 )
@@ -41,26 +36,9 @@ func main() {
 		githubactions.Fatalf("failed to validate resources: %v", err)
 	}
 
-	tfPath, err := exec.LookPath("terraform")
+	tfPath, err := terraform.EnsureInstalled(context.Background(), version.MustConstraints(version.NewConstraint(">= 1")))
 	if err != nil {
-		if errors.Is(err, exec.ErrNotFound) {
-			i := install.NewInstaller()
-			c := version.MustConstraints(version.NewConstraint(">= 1"))
-
-			tfPath, err = i.Install(context.Background(), []src.Installable{
-				&releases.LatestVersion{
-					Product:     product.Terraform,
-					Constraints: c,
-				},
-			})
-
-			if err != nil {
-				githubactions.Fatalf(err.Error())
-			}
-		} else {
-			githubactions.Fatalf(err.Error())
-		}
-
+		githubactions.Fatalf("failed to ensure terraform is installed: %v", err)
 	}
 
 	tf, err := tfexec.NewTerraform(inputs.WorkingDirectory, tfPath)
