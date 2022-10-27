@@ -1,7 +1,7 @@
 
-FROM golang:1.19-alpine
+FROM golang:1.19
 
-RUN apk add --no-cache git
+RUN apt-update && apt-get install git
 
 WORKDIR /src
 COPY . ./
