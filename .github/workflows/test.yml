@@ -12,6 +12,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v2
         with:
           terraform_wrapper: false
+      - run: terraform version
       - uses: ./
         with:
           resources: |
