@@ -23,4 +23,5 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version-file: go.mod
+          cache: true
       - run: go test -v ./...
