@@ -1,8 +1,6 @@
 
 FROM golang:1.19
 
-RUN apt-update && apt-get install git
-
 WORKDIR /src
 COPY . ./
 
