@@ -1,11 +1,11 @@
 
-FROM golang:1.19-alpine
-
-RUN apk add --no-cache git
+FROM golang:1.19
 
 WORKDIR /src
 COPY . ./
 
-RUN CGO_ENABLED=0 go build
+# required to exec provider plugins
+ENV CGO_ENABLED=0
+RUN go build
 
 ENTRYPOINT ["/src/terraform-resource-markdown-table-action"]
