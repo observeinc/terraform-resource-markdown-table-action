@@ -20,26 +20,25 @@ import (
 	tfaddr "github.com/hashicorp/terraform-registry-address"
 	"github.com/hashicorp/terraform-schema/earlydecoder"
 	"github.com/hashicorp/terraform-schema/schema"
+	"github.com/observeinc/terraform-resource-markdown-table-action/internal/action"
 	"github.com/olekukonko/tablewriter"
 	"github.com/sethvargo/go-githubactions"
-	"gopkg.in/yaml.v3"
 )
 
-type Resource struct {
-	Name       string   `yaml:"name"`
-	Attributes []string `yaml:"attributes"`
-}
-
 func main() {
-	workingDirectory := githubactions.GetInput("working_directory")
-
-	resources, err := getResourceInput()
-	if err != nil {
-		githubactions.Fatalf(err.Error())
+	inputs := action.Inputs{
+		WorkingDirectory: githubactions.GetInput("working_directory"),
+		OutputFile:       githubactions.GetInput("output_file"),
+		Resources:        action.ResourcesInput(githubactions.GetInput("resources")),
 	}
 
-	if len(resources) == 0 {
-		githubactions.Fatalf("No resources found")
+	resources, err := inputs.Resources.Parse()
+	if err != nil {
+		githubactions.Fatalf("failed to parse resources: %v", err)
+	}
+
+	if err := resources.Validate(); err != nil {
+		githubactions.Fatalf("failed to validate resources: %v", err)
 	}
 
 	tfPath, err := exec.LookPath("terraform")
@@ -64,7 +63,7 @@ func main() {
 
 	}
 
-	tf, err := tfexec.NewTerraform(workingDirectory, tfPath)
+	tf, err := tfexec.NewTerraform(inputs.WorkingDirectory, tfPath)
 	if err != nil {
 		githubactions.Fatalf(err.Error())
 	}
@@ -73,7 +72,7 @@ func main() {
 		githubactions.Fatalf("failed to terraform init: %v", err)
 	}
 
-	module, diags := tfconfig.LoadModule(workingDirectory)
+	module, diags := tfconfig.LoadModule(inputs.WorkingDirectory)
 	if diags.HasErrors() {
 		githubactions.Fatalf("failed to load module: %v", diags.Err())
 	}
@@ -147,7 +146,7 @@ func main() {
 				githubactions.Fatalf("failed to parse resource: %v", diags.Error())
 			}
 
-			relPath, err := filepath.Rel(workingDirectory, r.Pos.Filename)
+			relPath, err := filepath.Rel(inputs.WorkingDirectory, r.Pos.Filename)
 			if err != nil {
 				githubactions.Fatalf("failed to get relative path: %v", err)
 			}
@@ -189,18 +188,6 @@ func main() {
 		table.Render()
 		fmt.Println()
 	}
-}
-
-func getResourceInput() ([]Resource, error) {
-	input := githubactions.GetInput("resources")
-	var resources []Resource
-
-	err := yaml.Unmarshal([]byte(input), &resources)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse resources: %w", err)
-	}
-
-	return resources, nil
 }
 
 func tableHeaders(attributes []string) []string {
