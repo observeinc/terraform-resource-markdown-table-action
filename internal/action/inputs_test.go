@@ -77,7 +77,7 @@ func TestResources_Validate(t *testing.T) {
 					Attributes: []string{"bar"},
 				},
 			},
-			valid: false,
+			valid: true,
 		},
 	}
 
@@ -88,7 +88,7 @@ func TestResources_Validate(t *testing.T) {
 
 			err := tc.resources.Validate()
 
-			if valid := err != nil; valid != tc.valid {
+			if valid := err == nil; valid != tc.valid {
 				t.Errorf("Validate(), got %v, want %v", valid, tc.valid)
 				return
 			}
