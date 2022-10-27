@@ -9,8 +9,6 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	tfaddr "github.com/hashicorp/terraform-registry-address"
-	"github.com/hashicorp/terraform-schema/schema"
 	"github.com/observeinc/terraform-resource-markdown-table-action/internal/action"
 	"github.com/observeinc/terraform-resource-markdown-table-action/internal/terraform"
 	"github.com/olekukonko/tablewriter"
@@ -114,15 +112,4 @@ func tableHeaders(attributes []string) []string {
 	}
 
 	return headers
-}
-
-type localProviderSchemas map[tfaddr.Provider]*schema.ProviderSchema
-
-func (l localProviderSchemas) ProviderSchema(_ string, addr tfaddr.Provider, _ version.Constraints) (*schema.ProviderSchema, error) {
-	s, ok := l[addr]
-	if !ok {
-		return nil, fmt.Errorf("no schema found for %s", addr)
-	}
-
-	return s, nil
 }
