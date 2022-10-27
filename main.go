@@ -7,8 +7,13 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
 	"github.com/hashicorp/terraform-exec/tfexec"
+	tfaddr "github.com/hashicorp/terraform-registry-address"
+	"github.com/hashicorp/terraform-schema/earlydecoder"
+	"github.com/hashicorp/terraform-schema/schema"
 	"github.com/olekukonko/tablewriter"
 	"github.com/sethvargo/go-githubactions"
 	"gopkg.in/yaml.v3"
@@ -41,17 +46,45 @@ func main() {
 		githubactions.Fatalf(err.Error())
 	}
 
-	schemas, err := tf.ProvidersSchema(context.TODO())
-	if err != nil {
-		githubactions.Fatalf("failed to get provider schemas: %v", err)
-	}
-
-	_ = schemas
-
 	module, diags := tfconfig.LoadModule(workingDirectory)
 	if diags.HasErrors() {
 		githubactions.Fatalf("failed to load module: %v", diags.Err())
 	}
+
+	schemasJson, err := tf.ProvidersSchema(context.TODO())
+	if err != nil {
+		githubactions.Fatalf("failed to get provider schemas: %v", err)
+	}
+
+	core, err := schema.CoreModuleSchemaForConstraint(version.MustConstraints(version.NewConstraint(">= 1")))
+	if err != nil {
+		githubactions.Fatalf("failed to get core module schema: %v", err)
+	}
+
+	merger := schema.NewSchemaMerger(core)
+	providerSchemas := localProviderSchemas{}
+
+	for rawAddr, s := range schemasJson.Schemas {
+		addr := tfaddr.MustParseProviderSource(rawAddr)
+		providerSchema := schema.ProviderSchemaFromJson(s, addr)
+		providerSchemas[addr] = providerSchema
+	}
+
+	moduleMeta, mDiags := earlydecoder.LoadModule(module.Path, map[string]*hcl.File{})
+	if mDiags.HasErrors() {
+		githubactions.Fatalf("failed to load module: %v", mDiags.Error())
+	}
+
+	merger.SetSchemaReader(providerSchemas)
+	bs, err := merger.SchemaForModule(moduleMeta)
+	if err != nil {
+		githubactions.Fatalf("failed to get merged schema: %v", err)
+	}
+
+	_ = bs
+
+	// parser := hclparse.NewParser()
+	// parser.ParseHCL()
 
 	for _, resource := range resources {
 		fmt.Printf("## %s\n", resource.Name)
@@ -108,4 +141,15 @@ func tableHeaders(attributes []string) []string {
 	}
 
 	return headers
+}
+
+type localProviderSchemas map[tfaddr.Provider]*schema.ProviderSchema
+
+func (l localProviderSchemas) ProviderSchema(_ string, addr tfaddr.Provider, _ version.Constraints) (*schema.ProviderSchema, error) {
+	s, ok := l[addr]
+	if !ok {
+		return nil, fmt.Errorf("no schema found for %s", addr)
+	}
+
+	return s, nil
 }
