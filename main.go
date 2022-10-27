@@ -69,6 +69,10 @@ func main() {
 		githubactions.Fatalf(err.Error())
 	}
 
+	if err := tf.Init(context.Background()); err != nil {
+		githubactions.Fatalf("failed to terraform init: %v", err)
+	}
+
 	module, diags := tfconfig.LoadModule(workingDirectory)
 	if diags.HasErrors() {
 		githubactions.Fatalf("failed to load module: %v", diags.Err())
