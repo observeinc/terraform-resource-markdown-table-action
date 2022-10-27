@@ -7,12 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/go-version"
-	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfaddr "github.com/hashicorp/terraform-registry-address"
-	"github.com/hashicorp/terraform-schema/earlydecoder"
 	"github.com/hashicorp/terraform-schema/schema"
 	"github.com/observeinc/terraform-resource-markdown-table-action/internal/action"
 	"github.com/observeinc/terraform-resource-markdown-table-action/internal/terraform"
@@ -60,34 +57,16 @@ func main() {
 		githubactions.Fatalf("failed to get provider schemas: %v", err)
 	}
 
-	core, err := schema.CoreModuleSchemaForConstraint(version.MustConstraints(version.NewConstraint(">= 1")))
-	if err != nil {
-		githubactions.Fatalf("failed to get core module schema: %v", err)
+	parser := terraform.NewParser()
+
+	for source, schemaJson := range schemasJson.Schemas {
+		addr := tfaddr.MustParseProviderSource(source)
+		parser.SetProviderSchema(addr, schema.ProviderSchemaFromJson(schemaJson, addr))
 	}
 
-	merger := schema.NewSchemaMerger(core)
-	providerSchemas := localProviderSchemas{}
-
-	for rawAddr, s := range schemasJson.Schemas {
-		addr := tfaddr.MustParseProviderSource(rawAddr)
-		providerSchema := schema.ProviderSchemaFromJson(s, addr)
-		providerSchemas[addr] = providerSchema
+	if err := parser.LoadModule(inputs.WorkingDirectory); err != nil {
+		githubactions.Fatalf("failed to load module: %v", err)
 	}
-
-	moduleMeta, mDiags := earlydecoder.LoadModule(module.Path, map[string]*hcl.File{})
-	if mDiags.HasErrors() {
-		githubactions.Fatalf("failed to load module: %v", mDiags.Error())
-	}
-
-	merger.SetSchemaReader(providerSchemas)
-	bs, err := merger.SchemaForModule(moduleMeta)
-	if err != nil {
-		githubactions.Fatalf("failed to get merged schema: %v", err)
-	}
-
-	bodySchema := bs.ToHCLSchema()
-
-	parser := hclparse.NewParser()
 
 	for _, resource := range resources {
 		fmt.Printf("## %s\n", resource.Name)
@@ -105,59 +84,20 @@ func main() {
 				continue
 			}
 
-			var file *hcl.File
-			var diags hcl.Diagnostics
-
-			switch filename := r.Pos.Filename; filepath.Ext(filename) {
-			case ".tf":
-				file, diags = parser.ParseHCLFile(filename)
-			case ".json":
-				file, diags = parser.ParseJSONFile(filename)
-			}
-
-			if diags.HasErrors() {
-				githubactions.Fatalf("failed to parse file: %v", diags.Error())
-			}
-
-			content, _, diags := file.Body.PartialContent(bodySchema)
-			if diags.HasErrors() {
-				githubactions.Fatalf("failed to parse resource: %v", diags.Error())
-			}
-
 			relPath, err := filepath.Rel(inputs.WorkingDirectory, r.Pos.Filename)
 			if err != nil {
 				githubactions.Fatalf("failed to get relative path: %v", err)
 			}
 
-			var resourceBlock *hcl.Block
-			for _, block := range content.Blocks {
-				if block.Type != "resource" || block.Labels[0] != resource.Name || block.Labels[1] != r.Name {
-					continue
-				}
-
-				resourceBlock = block
-			}
-
-			if resourceBlock == nil {
-				githubactions.Fatalf("failed to find resource block")
-			}
-
 			row := []string{fmt.Sprintf("[`%s`](%s#L%d)", r.Name, relPath, r.Pos.Line)}
+
+			attrs, err := parser.ResourceAttributes(r, resource.Attributes)
+			if err != nil {
+				githubactions.Fatalf("failed to get resource attributes: %v", err)
+			}
+
 			for _, attr := range resource.Attributes {
-				providerSchema := providerSchemas[tfaddr.MustParseProviderSource(module.RequiredProviders[r.Provider.Name].Source)]
-
-				content, _, diags := resourceBlock.Body.PartialContent(providerSchema.Resources[r.Type].ToHCLSchema())
-				if diags.HasErrors() {
-					githubactions.Fatalf("failed to get attribute value: %v", diags.Error())
-				}
-
-				val, diags := content.Attributes[attr].Expr.Value(&hcl.EvalContext{})
-				if diags.HasErrors() {
-					githubactions.Fatalf("failed to get attribute value: %v", diags.Error())
-				}
-
-				// TODO: handle non-string types
-				row = append(row, val.AsString())
+				row = append(row, fmt.Sprintf("%v", attrs[attr]))
 			}
 
 			table.Append(row)
