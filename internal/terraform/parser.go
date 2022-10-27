@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
+	tfjson "github.com/hashicorp/terraform-json"
 	tfaddr "github.com/hashicorp/terraform-registry-address"
 	"github.com/hashicorp/terraform-schema/schema"
 	"github.com/zclconf/go-cty/cty"
@@ -19,11 +20,22 @@ type Parser struct {
 	providers    map[tfaddr.Provider]*schema.ProviderSchema
 }
 
-func NewParser() *Parser {
-	return &Parser{
+func NewParser(providers *tfjson.ProviderSchemas) (*Parser, error) {
+	p := &Parser{
 		hcl:       hclparse.NewParser(),
-		providers: make(map[tfaddr.Provider]*schema.ProviderSchema),
+		providers: make(map[tfaddr.Provider]*schema.ProviderSchema, len(providers.Schemas)),
 	}
+
+	for source, schemaJson := range providers.Schemas {
+		addr, err := tfaddr.ParseProviderSource(source)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse provider source %q: %w", source, err)
+		}
+
+		p.providers[addr] = schema.ProviderSchemaFromJson(schemaJson, addr)
+	}
+
+	return p, nil
 }
 
 func (p *Parser) LoadModule(dir string) error {

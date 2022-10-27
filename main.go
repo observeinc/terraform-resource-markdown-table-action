@@ -57,11 +57,9 @@ func main() {
 		githubactions.Fatalf("failed to get provider schemas: %v", err)
 	}
 
-	parser := terraform.NewParser()
-
-	for source, schemaJson := range schemasJson.Schemas {
-		addr := tfaddr.MustParseProviderSource(source)
-		parser.SetProviderSchema(addr, schema.ProviderSchemaFromJson(schemaJson, addr))
+	parser, err := terraform.NewParser(schemasJson)
+	if err != nil {
+		githubactions.Fatalf("failed to create parser: %v", err)
 	}
 
 	if err := parser.LoadModule(inputs.WorkingDirectory); err != nil {
