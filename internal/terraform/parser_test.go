@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -77,7 +78,7 @@ terraform {
 			}
 			t.Cleanup(func() { os.RemoveAll(dir) })
 
-			if err := os.WriteFile(dir+"/main.tf", []byte(tc.config), 0644); err != nil {
+			if err := os.WriteFile(filepath.Join(dir, "main.tf"), []byte(tc.config), 0644); err != nil {
 				t.Fatal(err)
 			}
 
