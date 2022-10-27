@@ -39,7 +39,7 @@ func main() {
 
 	tfPath, err := exec.LookPath("terraform")
 	if err != nil {
-		githubactions.Fatalf("terraform not found in PATH")
+		githubactions.Fatalf(err.Error())
 	}
 
 	tf, err := tfexec.NewTerraform(workingDirectory, tfPath)
