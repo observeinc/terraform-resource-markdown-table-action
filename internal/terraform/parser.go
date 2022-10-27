@@ -39,11 +39,7 @@ func NewParser(providers *tfjson.ProviderSchemas) (*Parser, error) {
 }
 
 func (p *Parser) LoadModule(dir string) error {
-	return p.loadModuleFromFilesystem(tfconfig.NewOsFs(), dir)
-}
-
-func (p *Parser) loadModuleFromFilesystem(fs tfconfig.FS, dir string) error {
-	module, diags := tfconfig.LoadModuleFromFilesystem(fs, dir)
+	module, diags := tfconfig.LoadModule(dir)
 	if diags.HasErrors() {
 		return diags.Err()
 	}
@@ -76,18 +72,34 @@ func (p *Parser) ProviderSchema(addr tfaddr.Provider) *schema.ProviderSchema {
 	return p.providers[addr]
 }
 
-func (p *Parser) RequiredProviderSource(name string) tfaddr.Provider {
-	rp := p.module.RequiredProviders[name]
-	return tfaddr.MustParseProviderSource(rp.Source)
+func (p *Parser) RequiredProviderSource(name string) (tfaddr.Provider, error) {
+	rp, ok := p.module.RequiredProviders[name]
+	if !ok {
+		return tfaddr.Provider{}, fmt.Errorf("required provider %q not found", name)
+	}
+
+	if rp.Source == "" {
+		return tfaddr.Provider{}, fmt.Errorf("required provider %q has no source", name)
+	}
+
+	return tfaddr.MustParseProviderSource(rp.Source), nil
 }
 
-func (p *Parser) ResourceAttributes(resource *tfconfig.Resource, attributes []string) (map[string]interface{}, error) {
+func (p *Parser) ResourceAttributes(resourceType, resourceName string, attributes []string) (map[string]interface{}, error) {
+	resource, ok := p.module.ManagedResources[fmt.Sprintf("%s.%s", resourceType, resourceName)]
+	if !ok {
+		return nil, fmt.Errorf("resource %s.%s not found", resourceType, resourceName)
+	}
+
 	block, diags := p.ResourceBlock(resource)
 	if diags.HasErrors() {
 		return nil, diags
 	}
 
-	source := p.RequiredProviderSource(resource.Provider.Name)
+	source, err := p.RequiredProviderSource(resource.Provider.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	ps := p.ProviderSchema(source)
 	rs := ps.Resources[resource.Type].ToHCLSchema()
