@@ -6,6 +6,8 @@ import (
 )
 
 func TestResourcesInput_Parse(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		input   string
@@ -49,6 +51,8 @@ func TestResourcesInput_Parse(t *testing.T) {
 }
 
 func TestResources_Validate(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name      string
 		resources Resources
