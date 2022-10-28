@@ -26,6 +26,7 @@ func WriteMarkdown(resource TerraformResourceType, rows []*ResourceRow, writer i
 	table.SetAutoFormatHeaders(false)
 	table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	table.SetCenterSeparator("|")
+	table.SetAutoWrapText(false)
 
 	for _, row := range rows {
 		table.Append(tableRow(resource, row))
