@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/observeinc/terraform-resource-markdown-table-action/internal/terraform"
+	"github.com/sethvargo/go-githubactions"
 )
 
 const (
@@ -76,6 +77,12 @@ func Run(ctx context.Context, inputs Inputs) error {
 		if err := WriteMarkdown(*resourceType, rows, &buffer); err != nil {
 			return fmt.Errorf("failed to write markdown: %w", err)
 		}
+	}
+
+	githubactions.SetOutput("markdown", buffer.String())
+
+	if inputs.OutputFile == "" {
+		return nil
 	}
 
 	file, err := os.OpenFile(inputs.OutputFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
