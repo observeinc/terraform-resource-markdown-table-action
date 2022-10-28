@@ -3,6 +3,7 @@ package action
 import (
 	"fmt"
 	"io"
+	"path/filepath"
 
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
 	"github.com/observeinc/terraform-resource-markdown-table-action/internal/terraform"
@@ -15,7 +16,7 @@ type ResourceRow struct {
 	Attributes map[string]interface{}
 }
 
-func WriteMarkdown(resource TerraformResourceType, rows []*ResourceRow, writer io.Writer) error {
+func WriteMarkdown(dir string, resource TerraformResourceType, rows []*ResourceRow, writer io.Writer) error {
 	if _, err := writer.Write([]byte(fmt.Sprintf("## %s\n\n", resource.Name))); err != nil {
 		return err
 	}
@@ -30,15 +31,25 @@ func WriteMarkdown(resource TerraformResourceType, rows []*ResourceRow, writer i
 	table.SetAutoWrapText(false)
 
 	for _, row := range rows {
-		table.Append(tableRow(resource, row))
+		r, err := tableRow(dir, resource, row)
+		if err != nil {
+			return err
+		}
+
+		table.Append(r)
 	}
 
 	table.Render()
 	return nil
 }
 
-func tableRow(resource TerraformResourceType, data *ResourceRow) []string {
-	row := []string{fmt.Sprintf("[`%s`](%s#L%d)", data.Name, data.Position.Filename, data.Position.Line)}
+func tableRow(dir string, resource TerraformResourceType, data *ResourceRow) ([]string, error) {
+	filename, err := filepath.Rel(dir, data.Position.Filename)
+	if err != nil {
+		return nil, err
+	}
+
+	row := []string{fmt.Sprintf("[`%s`](%s#L%d)", data.Name, filename, data.Position.Line)}
 
 	for _, key := range resource.Attributes {
 		value := data.Attributes[key]
@@ -55,7 +66,7 @@ func tableRow(resource TerraformResourceType, data *ResourceRow) []string {
 		row = append(row, cell)
 	}
 
-	return row
+	return row, nil
 }
 
 func tableHeaders(attributes []string) []string {

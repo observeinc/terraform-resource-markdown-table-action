@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-exec/tfexec"
@@ -74,12 +75,12 @@ func Run(ctx context.Context, inputs Inputs) error {
 			rows = append(rows, row)
 		}
 
-		if err := WriteMarkdown(*resourceType, rows, &buffer); err != nil {
+		if err := WriteMarkdown(inputs.WorkingDirectory, *resourceType, rows, &buffer); err != nil {
 			return fmt.Errorf("failed to write markdown: %w", err)
 		}
 	}
 
-	if ci := os.Getenv("CI"); ci != "" {
+	if os.Getenv("GITHUB_OUTPUT") != "" {
 		githubactions.SetOutput("markdown", buffer.String())
 	}
 
@@ -87,7 +88,7 @@ func Run(ctx context.Context, inputs Inputs) error {
 		return nil
 	}
 
-	file, err := os.OpenFile(inputs.OutputFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(filepath.Join(inputs.WorkingDirectory, inputs.OutputFile), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open output file: %w", err)
 	}
