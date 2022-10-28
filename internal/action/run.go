@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/observeinc/terraform-resource-markdown-table-action/internal/terraform"
+	"github.com/sethvargo/go-githubactions"
 )
 
 const (
@@ -78,7 +79,9 @@ func Run(ctx context.Context, inputs Inputs) error {
 		}
 	}
 
-	// githubactions.SetOutput("markdown", buffer.String())
+	if ci := os.Getenv("CI"); ci != "" {
+		githubactions.SetOutput("markdown", buffer.String())
+	}
 
 	if inputs.OutputFile == "" {
 		return nil
