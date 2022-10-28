@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/observeinc/terraform-resource-markdown-table-action/internal/terraform"
-	"github.com/sethvargo/go-githubactions"
 )
 
 const (
@@ -60,7 +59,7 @@ func Run(ctx context.Context, inputs Inputs) error {
 	for _, resourceType := range resourceTypes {
 		rows := []*ResourceRow{}
 		for _, resource := range parser.ResourcesOfType(resourceType.Name) {
-			attrs, err := parser.ResourceAttributes(resource.Type, resource.Name, resourceType.Attributes)
+			attrs, err := parser.ResourceAttributes(resource, resourceType.Attributes)
 			if err != nil {
 				return fmt.Errorf("failed to parse resource attributes for %s: %w", resource.MapKey(), err)
 			}
@@ -79,7 +78,7 @@ func Run(ctx context.Context, inputs Inputs) error {
 		}
 	}
 
-	githubactions.SetOutput("markdown", buffer.String())
+	// githubactions.SetOutput("markdown", buffer.String())
 
 	if inputs.OutputFile == "" {
 		return nil

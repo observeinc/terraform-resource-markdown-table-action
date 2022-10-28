@@ -95,12 +95,7 @@ func (p *Parser) ResourcesOfType(resourceType string) (resources []*tfconfig.Res
 	return resources
 }
 
-func (p *Parser) ResourceAttributes(resourceType, resourceName string, attributes []string) (map[string]interface{}, error) {
-	resource, ok := p.module.ManagedResources[fmt.Sprintf("%s.%s", resourceType, resourceName)]
-	if !ok {
-		return nil, fmt.Errorf("resource %s.%s not found", resourceType, resourceName)
-	}
-
+func (p *Parser) ResourceAttributes(resource *tfconfig.Resource, attributes []string) (map[string]interface{}, error) {
 	block, diags := p.ResourceBlock(resource)
 	if diags.HasErrors() {
 		return nil, diags

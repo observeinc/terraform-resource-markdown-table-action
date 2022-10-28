@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
 	tfjson "github.com/hashicorp/terraform-json"
@@ -156,14 +155,11 @@ terraform {
 				t.Fatal(err)
 			}
 
-			parser.LoadModule(dir)
-
-			rp := strings.SplitN(tc.resource, ".", 2)
-			if len(rp) != 2 {
-				t.Fatalf("invalid resource name: %s", tc.resource)
+			if err := parser.LoadModule(dir); err != nil {
+				t.Fatal(err)
 			}
 
-			got, err := parser.ResourceAttributes(rp[0], rp[1], []string{"foo"})
+			got, err := parser.ResourceAttributes(parser.module.ManagedResources[tc.resource], []string{"foo"})
 			if err != nil {
 				t.Fatal(err)
 			}
