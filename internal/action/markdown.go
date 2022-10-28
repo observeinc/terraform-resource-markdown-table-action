@@ -39,8 +39,15 @@ func WriteMarkdown(resource TerraformResourceType, rows []*ResourceRow, writer i
 func tableRow(resource TerraformResourceType, data *ResourceRow) []string {
 	row := []string{fmt.Sprintf("[`%s`](%s#L%d)", data.Name, data.Position.Filename, data.Position.Line)}
 
-	for _, attribute := range resource.Attributes {
-		row = append(row, fmt.Sprintf("%v", data.Attributes[attribute]))
+	for _, key := range resource.Attributes {
+		value := data.Attributes[key]
+
+		if value == nil {
+			row = append(row, "_unknown_")
+			continue
+		}
+
+		row = append(row, fmt.Sprintf("%v", value))
 	}
 
 	return row

@@ -123,7 +123,8 @@ func (p *Parser) ResourceAttributes(resource *tfconfig.Resource, attributes []st
 
 		value, diags := expr.Expr.Value(nil)
 		if diags.HasErrors() {
-			return nil, fmt.Errorf("failed to evaluate attribute %q for resource %s: %w", attr, resource.MapKey(), diags)
+			result[attr] = nil
+			continue
 		}
 
 		if !value.Type().IsPrimitiveType() {

@@ -20,6 +20,7 @@ func TestParserResourceAttributes(t *testing.T) {
 		resource   string
 		attributes []string
 		want       map[string]interface{}
+		wantErr    bool
 	}{
 		{
 			name: "string attribute",
@@ -132,6 +133,45 @@ terraform {
 				"foo": true,
 			},
 		},
+		{
+			name: "unevaluable attribute",
+			providers: &tfjson.ProviderSchemas{
+				Schemas: map[string]*tfjson.ProviderSchema{
+					"registry.terraform.io/test/test": {
+						ResourceSchemas: map[string]*tfjson.Schema{
+							"test_resource": {
+								Block: &tfjson.SchemaBlock{
+									Attributes: map[string]*tfjson.SchemaAttribute{
+										"foo": {
+											AttributeType: cty.String,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			config: `
+variable "foo" {}
+
+resource "test_resource" "test" {
+	foo = var.foo
+}
+
+terraform {
+	required_providers {
+		test = {
+			source = "test/test"
+		}
+	}
+}
+`,
+			resource: "test_resource.test",
+			want: map[string]interface{}{
+				"foo": nil,
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -160,8 +200,8 @@ terraform {
 			}
 
 			got, err := parser.ResourceAttributes(parser.module.ManagedResources[tc.resource], []string{"foo"})
-			if err != nil {
-				t.Fatal(err)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("unexpected error: %v", err)
 			}
 
 			if !reflect.DeepEqual(got, tc.want) {
