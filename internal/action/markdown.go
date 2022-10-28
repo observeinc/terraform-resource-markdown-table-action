@@ -15,7 +15,7 @@ type ResourceRow struct {
 }
 
 func WriteMarkdown(resource TerraformResourceType, rows []*ResourceRow, writer io.Writer) error {
-	if _, err := writer.Write([]byte(fmt.Sprintf("## %s", resource.Name))); err != nil {
+	if _, err := writer.Write([]byte(fmt.Sprintf("## %s\n\n", resource.Name))); err != nil {
 		return err
 	}
 
