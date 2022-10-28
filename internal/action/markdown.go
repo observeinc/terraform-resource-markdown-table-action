@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
+	"github.com/observeinc/terraform-resource-markdown-table-action/internal/terraform"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -42,12 +43,16 @@ func tableRow(resource TerraformResourceType, data *ResourceRow) []string {
 	for _, key := range resource.Attributes {
 		value := data.Attributes[key]
 
+		var cell string
 		if value == nil {
-			row = append(row, "_unknown_")
-			continue
+			cell = ""
+		} else if _, ok := value.(*terraform.UnknownAttributeValue); ok {
+			cell = "_unknown_"
+		} else {
+			cell = fmt.Sprintf("%s", value)
 		}
 
-		row = append(row, fmt.Sprintf("%v", value))
+		row = append(row, cell)
 	}
 
 	return row

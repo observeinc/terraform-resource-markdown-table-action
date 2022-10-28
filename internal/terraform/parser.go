@@ -38,6 +38,14 @@ func NewParser(providers *tfjson.ProviderSchemas) (*Parser, error) {
 	return p, nil
 }
 
+type UnknownAttributeValue struct {
+	Expr hcl.Expression
+}
+
+func (v *UnknownAttributeValue) String() string {
+	return "unknown"
+}
+
 func (p *Parser) LoadModule(dir string) error {
 	module, diags := tfconfig.LoadModule(dir)
 	if diags.HasErrors() {
@@ -118,12 +126,13 @@ func (p *Parser) ResourceAttributes(resource *tfconfig.Resource, attributes []st
 	for _, attr := range attributes {
 		expr, ok := content.Attributes[attr]
 		if !ok {
-			return nil, fmt.Errorf("attribute %q not found for resource %s", attr, resource.MapKey())
+			result[attr] = nil
+			continue
 		}
 
 		value, diags := expr.Expr.Value(nil)
 		if diags.HasErrors() {
-			result[attr] = nil
+			result[attr] = &UnknownAttributeValue{Expr: expr.Expr}
 			continue
 		}
 
