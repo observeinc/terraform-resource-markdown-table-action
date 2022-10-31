@@ -1,0 +1,30 @@
+name: test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          working_directory: ./testdata/simple
+          resources: |
+            - name: observe_monitor
+              attributes:
+                - name
+                - description
+          output_file: output.md
+      - run: diff -u ./testdata/simple/expected.md ./testdata/simple/output.md
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go test -v ./...

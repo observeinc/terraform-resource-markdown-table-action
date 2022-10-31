@@ -1,0 +1,26 @@
+name: Terraform Resource Markdown Table
+description: Generate a markdown table of resources from a Terraform module
+runs:
+  using: docker
+  image: Dockerfile
+inputs:
+  working_directory:
+    description: The directory containing the Terraform module
+    default: .
+    required: false
+  output-file:
+    description: >
+      The file where the output will be written, relative to the working directory.
+      When running for the first time, the output will be appended.
+      When re-running, the output will be overwritten.
+      If empty, the output will only be exposed via the action's outputs and not written to a file.
+    default: README.md
+    required: false
+  resources:
+    description: >
+      A YAML-encoded list of resources.
+      Each resource must have a `name` and a list of `attributes` that will be included in the table.
+    required: true
+outputs:
+  markdown:
+    description: The rendered markdown output
