@@ -3,9 +3,10 @@ package terraform
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -169,7 +170,7 @@ terraform {
 `,
 			resource: "test_resource.test",
 			want: map[string]interface{}{
-				"foo": nil,
+				"foo": &UnknownAttributeValue{},
 			},
 		},
 	}
@@ -204,8 +205,8 @@ terraform {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			if !reflect.DeepEqual(got, tc.want) {
-				t.Errorf("got %v, want %v", got, tc.want)
+			if diff := cmp.Diff(got, tc.want, cmpopts.IgnoreFields(UnknownAttributeValue{}, "Expr")); diff != "" {
+				t.Errorf("unexpected attributes -want +got:\n%s", diff)
 			}
 		})
 	}
