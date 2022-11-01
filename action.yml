@@ -8,7 +8,7 @@ inputs:
     description: The directory containing the Terraform module
     default: .
     required: false
-  output-file:
+  output_file:
     description: >
       The file where the output will be written, relative to the working directory.
       When running for the first time, the output will be appended.
