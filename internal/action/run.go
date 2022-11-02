@@ -88,7 +88,7 @@ func Run(ctx context.Context, inputs Inputs) error {
 		return nil
 	}
 
-	file, err := os.OpenFile(filepath.Join(inputs.WorkingDirectory, inputs.OutputFile), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(filepath.Join(inputs.WorkingDirectory, inputs.OutputFile), os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open output file: %w", err)
 	}
