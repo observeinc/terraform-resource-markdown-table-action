@@ -78,5 +78,5 @@ func ValueToMarkdown(value interface{}) string {
 		return "_unknown_"
 	}
 
-	return fmt.Sprintf("%s", value)
+	return fmt.Sprintf("%v", value)
 }
