@@ -88,7 +88,7 @@ func Run(ctx context.Context, inputs Inputs) error {
 		return nil
 	}
 
-	file, err := os.OpenFile(filepath.Join(inputs.WorkingDirectory, inputs.OutputFile), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(filepath.Join(inputs.WorkingDirectory, inputs.OutputFile), os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open output file: %w", err)
 	}
@@ -100,29 +100,43 @@ func Run(ctx context.Context, inputs Inputs) error {
 		return fmt.Errorf("failed to read output file: %w", err)
 	}
 
+	githubactions.Debugf("found existing content in output file, len=%d", len(existing))
+
 	if err := file.Truncate(0); err != nil {
 		return fmt.Errorf("failed to truncate output file: %w", err)
+	}
+
+	if _, err := file.Seek(0, 0); err != nil {
+		return fmt.Errorf("failed to seek output file: %w", err)
 	}
 
 	newline := []byte("\n")
 	start, end, ok := commentIndexes(existing)
 	if !ok {
-		file.Write(existing)
-		file.Write([]byte(BeforeComment))
-		file.Write(newline)
-		file.Write(buffer.Bytes())
-		file.Write(newline)
-		file.Write([]byte(AfterComment))
-		file.Write(newline)
-		return nil
+		githubactions.Debugf("comment fences not found, appending to file")
+
+		return writeBytes(
+			file,
+			withTrailingNewline(existing),
+			[]byte(BeforeComment),
+			newline,
+			buffer.Bytes(),
+			newline,
+			[]byte(AfterComment),
+			newline,
+		)
 	}
 
-	file.Write(existing[:start])
-	file.Write(newline)
-	file.Write(buffer.Bytes())
-	file.Write(newline)
-	file.Write(existing[end:])
-	return nil
+	githubactions.Debugf("comments found (start = %d, end = %d), updating file", start, end)
+
+	return writeBytes(
+		file,
+		existing[:start],
+		newline,
+		buffer.Bytes(),
+		newline,
+		existing[end:],
+	)
 }
 
 func commentIndexes(b []byte) (int, int, bool) {
@@ -141,4 +155,22 @@ func commentIndexes(b []byte) (int, int, bool) {
 	}
 
 	return start, end, true
+}
+
+func writeBytes(w io.Writer, b ...[]byte) error {
+	for _, bb := range b {
+		if _, err := w.Write(bb); err != nil {
+			return fmt.Errorf("failed to write to output file: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func withTrailingNewline(b []byte) []byte {
+	if len(b) == 0 {
+		return b
+	}
+
+	return bytes.Join([][]byte{b, []byte("\n")}, []byte{})
 }

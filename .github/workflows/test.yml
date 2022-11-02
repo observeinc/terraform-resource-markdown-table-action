@@ -7,18 +7,25 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - simple
+          - existing
     steps:
       - uses: actions/checkout@v3
       - uses: ./
         with:
-          working_directory: ./testdata/simple
+          working_directory: ./testdata/${{ matrix.test }}
           resources: |
             - name: observe_monitor
               attributes:
                 - name
                 - description
           output_file: output.md
-      - run: diff -u ./testdata/simple/expected.md ./testdata/simple/output.md
+      - run: diff -u expected.md output.md
+        working-directory: ./testdata/${{ matrix.test }}
   go:
     runs-on: ubuntu-latest
     steps:
