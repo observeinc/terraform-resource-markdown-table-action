@@ -13,6 +13,7 @@ jobs:
         test:
           - simple
           - existing
+          - replace
     steps:
       - uses: actions/checkout@v3
       - uses: ./
