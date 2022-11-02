@@ -118,6 +118,7 @@ func Run(ctx context.Context, inputs Inputs) error {
 		return writeBytes(
 			file,
 			existing,
+			newline,
 			[]byte(BeforeComment),
 			newline,
 			buffer.Bytes(),
