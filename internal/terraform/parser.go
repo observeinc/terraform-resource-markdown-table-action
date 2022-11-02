@@ -3,6 +3,7 @@ package terraform
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
@@ -93,12 +94,20 @@ func (p *Parser) RequiredProviderSource(name string) (tfaddr.Provider, error) {
 	return tfaddr.MustParseProviderSource(rp.Source), nil
 }
 
-func (p *Parser) ResourcesOfType(resourceType string) (resources []*tfconfig.Resource) {
+// ResourcesOfType returns all resources of the given type defined in the module.
+// Resources are sorted lexicographically by name, to ensure stable order.
+func (p *Parser) ResourcesOfType(resourceType string) []*tfconfig.Resource {
+	resources := []*tfconfig.Resource{}
+
 	for _, resource := range p.module.ManagedResources {
 		if resource.Type == resourceType {
 			resources = append(resources, resource)
 		}
 	}
+
+	sort.Slice(resources, func(i, j int) bool {
+		return resources[i].Name < resources[j].Name
+	})
 
 	return resources
 }
