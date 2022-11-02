@@ -75,7 +75,7 @@ func Run(ctx context.Context, inputs Inputs) error {
 			rows = append(rows, row)
 		}
 
-		if err := WriteMarkdown(inputs.WorkingDirectory, *resourceType, rows, &buffer); err != nil {
+		if err := WriteMarkdown(inputs.WorkingDirectory, *resourceType, rows, inputs.HeaderLevel, &buffer); err != nil {
 			return fmt.Errorf("failed to write markdown: %w", err)
 		}
 	}

@@ -21,6 +21,9 @@ inputs:
       A YAML-encoded list of resources.
       Each resource must have a `name` and a list of `attributes` that will be included in the table.
     required: true
+  resource_header_level:
+    description: The markdown header level that will be used for each resource
+    default: '2'
 outputs:
   markdown:
     description: The rendered markdown output

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
 	"github.com/observeinc/terraform-resource-markdown-table-action/internal/terraform"
@@ -16,8 +17,8 @@ type ResourceRow struct {
 	Attributes map[string]interface{}
 }
 
-func WriteMarkdown(dir string, resource TerraformResourceType, rows []*ResourceRow, writer io.Writer) error {
-	if _, err := writer.Write([]byte(fmt.Sprintf("## %s\n\n", resource.Name))); err != nil {
+func WriteMarkdown(dir string, resource TerraformResourceType, rows []*ResourceRow, headerLevel int, writer io.Writer) error {
+	if _, err := writer.Write([]byte(fmt.Sprintf("%s %s\n\n", strings.Repeat("#", headerLevel), resource.Name))); err != nil {
 		return err
 	}
 

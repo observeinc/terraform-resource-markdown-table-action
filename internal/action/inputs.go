@@ -13,6 +13,7 @@ type Inputs struct {
 	WorkingDirectory string
 	ResourceTypes    ResourcesInput
 	OutputFile       string
+	HeaderLevel      int
 }
 
 type ResourcesInput string
