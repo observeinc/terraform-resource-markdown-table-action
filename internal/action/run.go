@@ -106,6 +106,10 @@ func Run(ctx context.Context, inputs Inputs) error {
 		return fmt.Errorf("failed to truncate output file: %w", err)
 	}
 
+	if _, err := file.Seek(0, 0); err != nil {
+		return fmt.Errorf("failed to seek output file: %w", err)
+	}
+
 	newline := []byte("\n")
 	start, end, ok := commentIndexes(existing)
 	if !ok {
