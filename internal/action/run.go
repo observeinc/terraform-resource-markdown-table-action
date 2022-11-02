@@ -107,6 +107,8 @@ func Run(ctx context.Context, inputs Inputs) error {
 	newline := []byte("\n")
 	start, end, ok := commentIndexes(existing)
 	if !ok {
+		githubactions.Debugf("appending to file")
+
 		return writeBytes(
 			file,
 			existing,
@@ -118,6 +120,8 @@ func Run(ctx context.Context, inputs Inputs) error {
 			newline,
 		)
 	}
+
+	githubactions.Debugf("comments found (start = %d, end = %d), updating file", start, end)
 
 	return writeBytes(
 		file,
