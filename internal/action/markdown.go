@@ -53,17 +53,7 @@ func tableRow(dir string, resource TerraformResourceType, data *ResourceRow) ([]
 
 	for _, key := range resource.Attributes {
 		value := data.Attributes[key]
-
-		var cell string
-		if value == nil {
-			cell = ""
-		} else if _, ok := value.(*terraform.UnknownAttributeValue); ok {
-			cell = "_unknown_"
-		} else {
-			cell = fmt.Sprintf("%s", value)
-		}
-
-		row = append(row, cell)
+		row = append(row, ValueToMarkdown(value))
 	}
 
 	return row, nil
@@ -77,4 +67,16 @@ func tableHeaders(attributes []string) []string {
 	}
 
 	return headers
+}
+
+func ValueToMarkdown(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+
+	if _, ok := value.(*terraform.UnknownAttributeValue); ok {
+		return "_unknown_"
+	}
+
+	return fmt.Sprintf("%v", value)
 }
