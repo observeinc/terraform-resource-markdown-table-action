@@ -107,22 +107,26 @@ func Run(ctx context.Context, inputs Inputs) error {
 	newline := []byte("\n")
 	start, end, ok := commentIndexes(existing)
 	if !ok {
-		file.Write(existing)
-		file.Write([]byte(BeforeComment))
-		file.Write(newline)
-		file.Write(buffer.Bytes())
-		file.Write(newline)
-		file.Write([]byte(AfterComment))
-		file.Write(newline)
-		return nil
+		return writeBytes(
+			file,
+			existing,
+			[]byte(BeforeComment),
+			newline,
+			buffer.Bytes(),
+			newline,
+			[]byte(AfterComment),
+			newline,
+		)
 	}
 
-	file.Write(existing[:start])
-	file.Write(newline)
-	file.Write(buffer.Bytes())
-	file.Write(newline)
-	file.Write(existing[end:])
-	return nil
+	return writeBytes(
+		file,
+		existing[:start],
+		newline,
+		buffer.Bytes(),
+		newline,
+		existing[end:],
+	)
 }
 
 func commentIndexes(b []byte) (int, int, bool) {
@@ -141,4 +145,14 @@ func commentIndexes(b []byte) (int, int, bool) {
 	}
 
 	return start, end, true
+}
+
+func writeBytes(w io.Writer, b ...[]byte) error {
+	for _, bb := range b {
+		if _, err := w.Write(bb); err != nil {
+			return fmt.Errorf("failed to write to output file: %w", err)
+		}
+	}
+
+	return nil
 }
