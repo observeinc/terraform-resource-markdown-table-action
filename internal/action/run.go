@@ -100,6 +100,8 @@ func Run(ctx context.Context, inputs Inputs) error {
 		return fmt.Errorf("failed to read output file: %w", err)
 	}
 
+	githubactions.Debugf("found existing content in output file, len=%d", len(existing))
+
 	if err := file.Truncate(0); err != nil {
 		return fmt.Errorf("failed to truncate output file: %w", err)
 	}
