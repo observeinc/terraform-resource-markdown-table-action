@@ -117,8 +117,7 @@ func Run(ctx context.Context, inputs Inputs) error {
 
 		return writeBytes(
 			file,
-			existing,
-			newline,
+			withTrailingNewline(existing),
 			[]byte(BeforeComment),
 			newline,
 			buffer.Bytes(),
@@ -166,4 +165,12 @@ func writeBytes(w io.Writer, b ...[]byte) error {
 	}
 
 	return nil
+}
+
+func withTrailingNewline(b []byte) []byte {
+	if len(b) == 0 {
+		return b
+	}
+
+	return bytes.Join([][]byte{b, []byte("\n")}, []byte{})
 }
