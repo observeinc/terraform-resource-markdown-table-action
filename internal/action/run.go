@@ -107,7 +107,7 @@ func Run(ctx context.Context, inputs Inputs) error {
 	newline := []byte("\n")
 	start, end, ok := commentIndexes(existing)
 	if !ok {
-		githubactions.Debugf("appending to file")
+		githubactions.Debugf("comment fences not found, appending to file")
 
 		return writeBytes(
 			file,
